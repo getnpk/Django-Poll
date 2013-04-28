@@ -1,42 +1,65 @@
+from django.http import HttpResponseRedirect, HttpResponse
+from polls.models import Poll, Choice
+from django.core.urlresolvers import reverse
 
-from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404
+
 '''
 from django.template import Context, loader
-from django.http import Http404
-'''
 
-from django.shortcuts import render_to_response, get_object_or_404
+
 from polls.models import Poll
 
-
-'''
 def index(request):
-    latest_poll_list = Poll.objects.all().order_by('-pub_date')[:5]
-    t = loader.get_template('polls/index.html')
-    c = Context({
+    latest_poll_list = Poll.objects.order_by('-pub_date')[:5]
+    template = loader.get_template('polls/index.html')
+    context = Context({
         'latest_poll_list': latest_poll_list,
     })
-    return HttpResponse(t.render(c))
+    return HttpResponse(template.render(context))
 '''
-def index(request):
-    latest_poll_list = Poll.objects.all().order_by('-pub_date')[:5]
-    return render_to_response('polls/index.html', {'latest_poll_list': latest_poll_list})
 
 '''
+from django.http import Http404
+
 def detail(request, poll_id):
     try:
-        p = Poll.objects.get(pk=poll_id)
+        poll = Poll.objects.get(pk=poll_id)
     except Poll.DoesNotExist:
         raise Http404
-    return render_to_response('polls/detail.html', {'poll': p})
+    return render(request, 'polls/detail.html', {'poll': poll})
 '''
 
+'''
+#This is to be replaced by generic views
+def index(request):
+    latest_poll_list = Poll.objects.all().order_by('-pub_date')[:5]
+    context = {'latest_poll_list': latest_poll_list}
+    return render(request, 'polls/index.html', context)
+
 def detail(request, poll_id):
-    p = get_object_or_404(Poll, pk=poll_id)#takes a Django model as its first argument and an arbitrary number of keyword arguments
-    return render_to_response('polls/detail.html', {'poll': p}) # get_list_or_404() users filter
+    poll = get_object_or_404(Poll, pk=poll_id)
+    return render(request, 'polls/detail.html', {'poll': poll})
 
 def results(request, poll_id):
-    return HttpResponse("You're looking at the results of poll %s." % poll_id)
+    poll = get_object_or_404(Poll, pk=poll_id)
+    return render(request, 'polls/results.html', {'poll': poll})
+'''
 
 def vote(request, poll_id):
-    return HttpResponse("You're voting on poll %s." % poll_id)
+    p = get_object_or_404(Poll, pk=poll_id)
+    try:
+        selected_choice = p.choice_set.get(pk=request.POST['choice'])
+    except (KeyError, Choice.DoesNotExist):
+        # Redisplay the poll voting form.
+        return render(request, 'polls/detail.html', {
+            'poll': p,
+            'error_message': "You didn't select a choice.",
+        })
+    else:
+        selected_choice.votes += 1
+        selected_choice.save()
+        # Always return an HttpResponseRedirect after successfully dealing
+        # with POST data. This prevents data from being posted twice if a
+        # user hits the Back button.
+        return HttpResponseRedirect(reverse('polls:results', args=(p.id,)))
