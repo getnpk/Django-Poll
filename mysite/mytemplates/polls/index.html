@@ -1,12 +1,16 @@
 <!-- incase you are using <1.5  URL definition as specified in the polls.urls-->
 {% load url from future %}
 
+{% load staticfiles %}
+<link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}" />
+
 {% if latest_poll_list %}
     <ul>
     {% for poll in latest_poll_list %}
+    </ul>
+
         <li><a href="{% url 'polls:detail' poll.id %}">{{ poll.question }}</a></li>
     {% endfor %}
-    </ul>
-{% else %}
+
     <p>No polls are available.</p>
 {% endif %}
